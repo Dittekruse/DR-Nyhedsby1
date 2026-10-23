@@ -1,4 +1,3 @@
-
 /*
   DR NYHEDSBY – VERSION 2
   -----------------------
@@ -7,21 +6,26 @@
   2. Klikke på en byggegrund.
   3. Bygge et hus for 50 mønter.
   4. Se huset dukke op i 3D-byen.
-
   Vi bruger Three.js til 3D-grafikken.
 */
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { supabase } from './supabase.js';
+import { refreshFlags } from './rewards.js';
 let viewingFriend =
   new URLSearchParams(window.location.search).has('user');
 // ---------- 1. SPILLETS INDSTILLINGER ----------
 
 
-let coins = Number(localStorage.getItem('drNyhedsbyCoins') ?? 500);
-let selectedPlot = null;
+const savedPoints =
+  localStorage.getItem('drNyhedsbyPoints') ??
+  localStorage.getItem('drNyhedsbyPoints');
 
+let points = Number(savedPoints ?? 500);
+localStorage.setItem('drNyhedsbyPoints', String(points));
+
+let selectedPlot = null;
 // Spilleren vælger først, hvilken bygning der skal bygges.
 let selectedBuilding = 'redHouse';
 
@@ -564,7 +568,7 @@ async function saveCity() {
       {
         user_id: user.id,
         city_name: 'Min by',
-        coins: coins,
+        points: points,
         buildings: savedBuildings,
         updated_at: new Date().toISOString()
       },
@@ -602,7 +606,7 @@ async function loadCity() {
 
   const { data, error } = await supabase
     .from('cities')
-    .select('buildings, coins')
+    .select('buildings, points')
     .eq('user_id', cityUserId)
     .maybeSingle();
 
@@ -621,15 +625,15 @@ async function loadCity() {
   let savedBuildings = data?.buildings ?? [];
 
   if (!viewingFriend) {
-    if (typeof data?.coins === 'number') {
-      coins = data.coins;
+    if (typeof data?.points === 'number') {
+      points = data.points;
     }
 
     localStorage.setItem(
       'drNyhedsbyBuildings',
       JSON.stringify(savedBuildings)
     );
-    localStorage.setItem('drNyhedsbyCoins', String(coins));
+    localStorage.setItem('drNyhedsbyPoints', String(points));
 
     if (!data) {
       try {
@@ -948,9 +952,13 @@ hud.innerHTML = `
   <h2 style="margin:8px 0">Byg din egen by</h2>
 
   <div id="coin-count"
-    style="font-size:19px;font-weight:bold;margin-bottom:12px">
-    🪙 ${coins} mønter
-  </div>
+  style="font-size:19px;font-weight:bold;margin-bottom:6px">
+<img src="./icons/point.svg" width="22" height="22" style="vertical-align:middle"></div>
+
+<div data-total-flags
+  style="font-size:16px;font-weight:bold;margin-bottom:12px">
+  🚩 Henter flag...
+</div>
 
   <p id="plot-message" style="font-size:14px;line-height:1.5">
     Klik på en grøn byggegrund for at vælge den.
@@ -976,9 +984,38 @@ hud.innerHTML = `
   </p>
 `;
 
+
 document.body.appendChild(hud);
 
+// Hent flag fra Supabase og vis dem i byens menu.
+const flagsDisplay = hud.querySelector('[data-total-flags]');
+
+
+async function updateFlagsDisplay() {
+  flagsDisplay.innerHTML = '<img src="./icons/flag.svg" width="20" height="20" style="vertical-align:middle"> Henter flag...';
+
+  try {
+    const totalFlags = await refreshFlags();
+    flagsDisplay.innerHTML = `<img src="./icons/flag.svg" width="20" height="20" style="vertical-align:middle"> ${totalFlags} flag`;
+  } catch (error) {
+    console.error('Kunne ikke hente flag:', error);
+    flagsDisplay.innerHTML = '<img src="./icons/flag.svg" width="20" height="20" style="vertical-align:middle"> Kunne ikke hente flag';
+  }
+}
+
+
+
+window.addEventListener('dr-flags-updated', (event) => {
+  const totalFlags = Number(event.detail?.totalFlags ?? 0);
+  flagsDisplay.innerHTML = `<img src="./icons/flag.svg" width="20" height="20" style="vertical-align:middle"> ${totalFlags} flag`;
+});
+
+
+void updateFlagsDisplay();
+
 // Finder elementerne i menuen.
+
+
 const coinCount = hud.querySelector('#coin-count');
 const plotMessage = hud.querySelector('#plot-message');
 const buildButton = hud.querySelector('#build-button');
@@ -1006,7 +1043,7 @@ for (const [buildingId, buildingName] of Object.entries(BUILDING_NAMES)) {
     <br>
     <strong>${buildingName}</strong>
     <br>
-    ${BUILDING_PRICES[buildingId]} mønter
+    ${BUILDING_PRICES[buildingId]} point
   `;
 
   button.addEventListener('click', () => {
@@ -1027,8 +1064,8 @@ function isUniqueBuildingBuilt(buildingId) {
 
 // Opdaterer mønter, menu, byggeknap og beskeder.
 function updateHUD() {
-  localStorage.setItem('drNyhedsbyCoins', String(coins));
-  coinCount.textContent = `🪙 ${coins} mønter`;
+  localStorage.setItem('drNyhedsbyPoints', String(points));
+coinCount.textContent = `⭐ ${points} point`;
 
   const price = BUILDING_PRICES[selectedBuilding];
   const buildingName = BUILDING_NAMES[selectedBuilding];
@@ -1074,12 +1111,12 @@ function updateHUD() {
   } else {
     plotMessage.textContent =
       `Du har valgt grund ${selectedPlot.userData.id + 1}. ` +
-      `Du kan bygge ${buildingName} for ${price} mønter.`;
+      `Du kan bygge ${buildingName} for ${price} point.`;
 
     buildButton.textContent =
-      `${BUILDING_ICONS[selectedBuilding]} Byg ${buildingName} · ${price} mønter`;
+      `${BUILDING_ICONS[selectedBuilding]} Byg ${buildingName} · ${price} point`;
 
-    buildButton.disabled = coins < price;
+    buildButton.disabled = points < price;
   }
 
   buildButton.style.background = buildButton.disabled
@@ -1111,9 +1148,9 @@ buildButton.addEventListener('click', () => {
     return;
   }
 
-  if (coins < price) {
+  if (points < price) {
     plotMessage.textContent =
-      `Du mangler mønter. ${buildingName} koster ${price} mønter.`;
+      `Du mangler point. ${buildingName} koster ${price} point.`;
     updateHUD();
     return;
   }
@@ -1130,7 +1167,7 @@ buildButton.addEventListener('click', () => {
 
   // Bygger først og trækker derefter mønterne.
   createBuilding(x, z);
-  coins -= price;
+  points -= price;
 
   selectedPlot.userData.built = true;
   selectedPlot.userData.buildingType = buildingId;

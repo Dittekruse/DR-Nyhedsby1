@@ -34,8 +34,18 @@
     button:disabled { cursor:default; opacity:.85; }
     .muted { color:var(--muted); }
     .hidden { display:none !important; }
-    .answer { display:block; width:100%; text-align:left; background:#fff; color:var(--ink); border:1px solid #d5d4d0; margin:10px 0; border-radius:5px; padding:15px 17px; }
-    .answer:hover:not(:disabled) { background:#f7f6f3; border-color:#111; color:#111; }
+    .answer { display:block; 
+     .question-image {
+  display: block;
+  width: 100%;
+  max-width: 650px;
+  max-height: 350px;
+  object-fit: contain;
+  margin: 18px auto;
+  border-radius: 8px;
+} 
+   
+.answer:hover:not(:disabled) { background:#f7f6f3; border-color:#111; color:#111; }
     .answer.correct { background:#e7f3e9; border-color:var(--green); color:#155b38; }
     .answer.incorrect { background:#fde9ec; border-color:var(--red); color:#9f1028; }
     #feedback { margin-top:18px; padding:16px 18px; border-left:4px solid var(--red); border-radius:0 5px 5px 0; background:#f7f6f3; }
@@ -55,15 +65,15 @@
     </div>
     <p class="eyebrow" style="margin-top:27px">UGENS NYHEDER · UGE 42</p>
     <h1>Bliv klogere.<br>Byg din egen by.</h1>
-    <p>Test din viden om ugens nyheder, og tjen mønter til din egen by — ét spørgsmål ad gangen.</p>
+    <p>Test din viden om ugens nyheder, og tjen point til din egen by — ét spørgsmål ad gangen.</p>
   </header>
 
   <main>
     <section class="panel" id="home">
       <p class="eyebrow">UGENS NYHEDER · UGE 42</p>
       <h2>Ugens nyhedsquiz</h2>
-      <p class="intro">Svar på de syv spørgsmål om ugens nyheder. Hvert rigtigt svar giver dig 10 mønter, som du kan bruge i DR Nyhedsby.</p>
-      <p><strong>Belønning:</strong> 10 mønter pr. rigtigt svar 🪙</p>
+      <p class="intro">Svar på de syv spørgsmål om ugens nyheder. Hvert rigtigt svar giver dig 10 point, som du kan bruge i DR Nyhedsby.</p>
+      <p><strong>Belønning:</strong> 10 point pr. rigtigt svar 🪙</p>
       <div class="button-row">
         <button class="red" onclick="startQuiz()">Start quizzen</button>
         <a class="back-link" href="by.html">Tilbage til min by</a>
@@ -73,6 +83,7 @@
     <section class="panel hidden" id="quiz">
       <p class="muted" id="progress"></p>
       <h2 id="question"></h2>
+      <img id="questionImage" class="question-image" alt="Billede til nyhedsspørgsmålet">
       <div id="answers"></div>
       <p id="feedback" aria-live="polite"></p>
       <button id="next" class="red hidden" onclick="nextQuestion()">Videre →</button>
@@ -201,7 +212,14 @@
       document.getElementById("progress").textContent =
         `Spørgsmål ${current + 1} af ${questions.length}`;
       document.getElementById("question").textContent = q.q;
-      document.getElementById("feedback").textContent = "";
+const questionImage = document.getElementById("questionImage");
+const imageNumber = current + 1;
+const extension = imageNumber === 5 ? "webp" : "jpg";
+
+questionImage.src = `/DR-Nyhedsby/Nyhedsbilleder/${imageNumber}.${extension}`;
+questionImage.style.display = "block";
+questionImage.alt = `Billede til spørgsmål ${imageNumber}`;
+document.getElementById("feedback").textContent = "";
       document.getElementById("next").classList.add("hidden");
 
       const answers = document.getElementById("answers");
@@ -224,20 +242,33 @@
       const buttons = document.querySelectorAll("#answers button");
       buttons.forEach(btn => btn.disabled = true);
 
-      const feedback = document.getElementById("feedback");
-      if (index === q.correct) {
-        correctCount++;
-        coinsEarned += 10;
 
-        // Del møntsaldoen med 3D-byen via localStorage.
-        const currentBalance = Number(localStorage.getItem("drNyhedsbyCoins") ?? 500);
-        const newBalance = currentBalance + 10;
-        localStorage.setItem("drNyhedsbyCoins", String(newBalance));
+const feedback = document.getElementById("feedback");
 
-        feedback.textContent = "✓ Korrekt! Du får 10 mønter. " + q.explanation;
-      } else {
-        feedback.textContent = "✕ Forkert! " + q.explanation;
-      }
+if (index === q.correct) {
+  correctCount++;
+  coinsEarned += 10;
+
+  // Giv 10 permanente flag til leaderboardet.
+  window.dispatchEvent(new CustomEvent("dr-earn-flags", {
+    detail: { amount: 10 }
+  }));
+
+  // Giv 10 point til 3D-byen.
+  const currentBalance = Number(
+    localStorage.getItem("drNyhedsbyPoints") ??
+    localStorage.getItem("drNyhedsbyCoins") ??
+    500
+  );
+
+  const newBalance = currentBalance + 10;
+  localStorage.setItem("drNyhedsbyPoints", String(newBalance));
+
+  feedback.textContent =
+    "✓ Korrekt! Du får 10 point og 10 flag. " + q.explanation;
+} else {
+  feedback.textContent = "✕ Forkert! " + q.explanation;
+}
 
       document.getElementById("next").classList.remove("hidden");
       document.getElementById("next").textContent =
@@ -263,10 +294,14 @@
       document.getElementById("score").textContent =
         `${correctCount} ud af ${questions.length} rigtige`;
       document.getElementById("resultText").textContent =
-        `Du har tjent ${coinsEarned} mønter i denne quiz!`;
-      const totalBalance = Number(localStorage.getItem("drNyhedsbyCoins") ?? 500);
-      document.getElementById("coinTotal").textContent =
-        `🪙 ${coinsEarned} mønter optjent i quizzen · Din samlede saldo: ${totalBalance} mønter`;
+        `Du har tjent ${coinsEarned} point i denne quiz!`;
+
+const totalBalance = Number(
+  localStorage.getItem("drNyhedsbyPoints") ??
+  localStorage.getItem("drNyhedsbyCoins") ??
+  500
+);      document.getElementById("coinTotal").textContent =
+        `🪙 ${coinsEarned} point optjent i quizzen · Din samlede saldo: ${totalBalance} point`;
 
       document.getElementById("myScore").textContent =
         `${correctCount}/${questions.length}`;
@@ -290,5 +325,6 @@
 
 
   </script>
+  <script type="module" src="/src/rewards.js"></script>
 </body>
 </html>

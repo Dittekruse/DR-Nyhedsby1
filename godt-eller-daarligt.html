@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Godt eller dårligt for Danmark? – DR Nyhedsby</title>
   <style>
-    :root { --red:#e31b3d; --ink:#151515; --paper:#f5f4f0; --green:#237a4b; --bad:#c52b3d; }
+    :root { --red:#ff001e; --ink:#151515; --paper:#f5f4f0; --rød 2:#ff001e; --bad:#ff001e; }
     * { box-sizing:border-box; }
     html,body { margin:0; width:100%; height:100%; overflow:hidden; font-family:Arial,Helvetica,sans-serif; color:var(--ink); background:#b7d6e2; }
     #scene { position:fixed; inset:0; z-index:0; }
@@ -26,8 +26,8 @@
     .actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:min(600px,94vw); margin-top:12px; pointer-events:auto; }
     .sort { border:0; border-radius:12px; min-height:64px; padding:12px 15px; color:#fff; font-size:16px; font-weight:900; box-shadow:0 8px 0 #00000020,0 14px 25px #00000016; transition:transform .1s,filter .15s; }
     .sort:active { transform:translateY(4px); box-shadow:0 4px 0 #00000020; }
-    .sort.good { background:linear-gradient(135deg,#278c59,#17663e); }
-    .sort.bad { background:linear-gradient(135deg,#e54a58,#b51c34); }
+    .sort.good { background:linear-gradient(135deg,#ff001e,#ff001e); }
+    .sort.bad { background:linear-gradient(135deg,#ff001e,#ff001e); }
     .sort small { display:block; font-size:11px; opacity:.85; font-weight:700; margin-top:3px; }
     .feedback { min-height:30px; margin-top:13px; text-align:center; font-weight:900; color:#17252b; text-shadow:0 1px #ffffff80; pointer-events:none; }
     .overlay { position:fixed; z-index:5; inset:0; display:grid; place-items:center; padding:20px; background:#17252bb8; }
@@ -59,8 +59,8 @@
       <p id="description">Sortér nyhederne. Du må gerne være lidt hård i din vurdering.</p>
     </section>
     <div class="actions">
-      <button class="sort good" id="goodBtn">👍 Godt for Danmark<small>En gevinst, trods alt</small></button>
-      <button class="sort bad" id="badBtn">👎 Dårligt for Danmark<small>Av. Den var ikke god.</small></button>
+      <button class="sort good" id="goodBtn"> Godt for Danmark<small>En gevinst, trods alt</small></button>
+      <button class="sort bad" id="badBtn"> Dårligt for Danmark<small>Av. Den var ikke god.</small></button>
     </div>
     <div class="feedback" id="feedback" aria-live="polite">Vælg en kategori</div>
   </main>
@@ -84,5 +84,6 @@
     </div>
   </div>
   <script type="module" src="/src/godt-eller-daarligt.js"></script>
+  <script type="module" src="/src/rewards.js"></script>
 </body>
 </html>

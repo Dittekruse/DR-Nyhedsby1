@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DR Nyhedsby</title>
   <style>
+    .leaderboard-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+}
     :root { --red:#e31b3d; --ink:#111111; --paper:#f6f5f2; --muted:#656565; --green:#216e43; --line:#deddd8; }
     * { box-sizing:border-box; }
     body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--paper); color:var(--ink); line-height:1.55; }
@@ -72,8 +78,13 @@
 
 .feature-icon {
   display: block;
-  font-size: 34px;
   margin-bottom: 13px;
+}
+
+.feature-icon img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .feature-card h3 {
@@ -154,30 +165,34 @@
   <div class="feature-grid">
 
     <a class="feature-card" href="by.html">
-      <span class="feature-icon">🏙️</span>
-      <h3>Min by</h3>
+<span class="feature-icon">
+  <img src="icons/by.svg" alt="Min by">
+</span>      <h3>Min by</h3>
       <p>Besøg din by, og brug dine mønter på at bygge videre.</p>
       <span class="card-action">BESØG MIN BY →</span>
     </a>
 
     <a class="feature-card" href="#quiz" onclick="startQuiz(); return false;">
-      <span class="feature-icon">📰</span>
-      <h3>Ugens quiz</h3>
+<span class="feature-icon">
+  <img src="icons/quiz.svg" alt="Ugens quiz">
+</span>      <h3>Ugens quiz</h3>
       <p>Test din viden om ugens nyheder, og tjen 10 mønter for hvert rigtigt svar.</p>
       <span class="card-action">START QUIZZEN →</span>
     </a>
 
     <a class="feature-card featured" href="godt-eller-daarligt.html">
-      <span class="feature-icon">🎮</span>
-      <h3>Minispil</h3>
+<span class="feature-icon">
+  <img src="icons/controller.svg" alt="Minispil">
+</span>      <h3>Minispil</h3>
       <p>Spil Godt eller dårligt for Danmark? og sortér nyhederne.</p>
       <span class="card-action">SPIL NU →</span>
     </a>
 
     
 <div class="feature-card" onclick="window.open('https://www.dr.dk/nyheder', '_blank')" style="cursor:pointer;">
-  <span class="feature-icon">📡</span>
-  <h3>Nyheder</h3>
+<span class="feature-icon">
+  <img src="icons/news.svg" alt="Nyheder">
+</span>  <h3>Nyheder</h3>
   <p>Følg med i, hvad der sker i Danmark og resten af verden.</p>
   <span class="card-action">LÆS NYHEDER →</span>
 </div>
@@ -186,8 +201,9 @@
 
    
 <button class="feature-card" id="open-friends-button" type="button" style="text-align:left;width:100%;color:var(--ink);background:white;">
-  <span class="feature-icon">👥</span>
-  <h3>Venner</h3>
+<span class="feature-icon">
+  <img src="icons/venner.svg" alt="Venner">
+</span>  <h3>Venner</h3>
   <p>Find venner, send venneanmodninger, og se hvem der er online i din nyhedsby.</p>
   <span class="card-action">ÅBN VENNER →</span>
 </button>
@@ -230,6 +246,8 @@
       <a href="index.html" style="color:#e51c3a;font-size:12px;font-weight:800;letter-spacing:1.5px;text-decoration:none;">DR NYHEDSBY · TILBAGE TIL FORSIDEN</a>
       <p class="muted" id="progress"></p>
       <h2 id="question"></h2>
+      <img id="questionImage" alt="Billede til nyhedsspørgsmålet"
+     style="display:block; max-width:100%; max-height:350px; margin:18px auto;">
       <div id="answers"></div>
       <p id="feedback" aria-live="polite"></p>
       <button id="next" class="red hidden" onclick="nextQuestion()">Videre →</button>
@@ -358,6 +376,10 @@
       document.getElementById("progress").textContent =
         `Spørgsmål ${current + 1} af ${questions.length}`;
       document.getElementById("question").textContent = q.q;
+      const questionImage = document.getElementById("questionImage");
+const imageNumber = current + 1;
+const extension = imageNumber === 5 ? "webp" : "jpg";
+questionImage.src = `Nyhedsbilleder/${imageNumber}.${extension}`;
       document.getElementById("feedback").textContent = "";
       document.getElementById("next").classList.add("hidden");
 
@@ -421,10 +443,26 @@
         `${correctCount} ud af ${questions.length} rigtige`;
       document.getElementById("resultText").textContent =
         `Du har tjent ${coinsEarned} mønter i denne quiz!`;
-      const totalBalance = Number(localStorage.getItem("drNyhedsbyCoins") ?? 500);
-      document.getElementById("coinTotal").textContent =
-        `🪙 ${coinsEarned} mønter optjent i quizzen · Din samlede saldo: ${totalBalance} mønter`;
+      
+      const totalBalance = Number(
+  localStorage.getItem("drNyhedsbyPoints") ??
+  localStorage.getItem("drNyhedsbyCoins") ??
+  500
+);
 
+document.getElementById("coinTotal").innerHTML =
+  `<img src="icons/point.svg" alt="Point" class="leaderboard-icon"> ${coinsEarned} point optjent i quizzen · Din samlede saldo: ${totalBalance} point`;
+let flagResult = document.getElementById("quizTotalFlags");
+
+if (!flagResult) {
+  flagResult = document.createElement("p");
+  flagResult.id = "quizTotalFlags";
+  document.getElementById("coinTotal").after(flagResult);
+}
+
+flagResult.dataset.totalFlags = "";
+flagResult.innerHTML = '<img src="icons/flag.svg" alt="Flag" class="leaderboard-icon"> Henter flag...';
+window.dispatchEvent(new Event("dr-refresh-flags"));
       document.getElementById("myScore").textContent =
         `${correctCount}/${questions.length}`;
 
@@ -449,5 +487,6 @@
   </script>
   <script type="module" src="./src/login-ui.js"></script>
   <script type="module" src="./src/friends.js"></script>
+<script type="module" src="./src/rewards.js"></script>
 </body>
 </html>
